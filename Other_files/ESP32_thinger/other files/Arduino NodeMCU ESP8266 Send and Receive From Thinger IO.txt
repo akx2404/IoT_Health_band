@@ -1,0 +1,246 @@
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Test DHT11 and LED
+//----------------------------------------Include Library
+#include "DHT.h"
+//----------------------------------------
+
+//----------------------------------------DHT11 Sensor Configuration
+#define DHTPIN D1 //--> Digital pin connected to the DHT sensor. D1 = GPIO5.
+#define DHTTYPE DHT11 //--> DHT11
+
+DHT dht11(DHTPIN, DHTTYPE); //--> DHT11 Sensor Initialization
+//----------------------------------------
+
+#define LEDGreen D5 //--> Green LED pin. D5 = GPIO14.
+#define LEDBlue D6 //--> Blue LED pin. D6 = GPIO12.
+
+//========================================================================VOID SETUP
+void setup() {
+  // put your setup code here, to run once:
+  
+  Serial.begin(9600);
+
+  pinMode(LEDBlue, OUTPUT);
+  pinMode(LEDGreen, OUTPUT);
+  
+  Serial.println(F("DHTxx and LED test!"));
+  dht11.begin();
+
+  digitalWrite(LEDGreen, HIGH);
+  digitalWrite(LEDBlue, LOW);
+}
+//========================================================================
+
+//========================================================================VOID LOOP
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  // Wait a few seconds between measurements.
+  delay(2000);
+
+  // Reading temperature or humidity takes about 250 milliseconds!
+  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+  float h = dht11.readHumidity();
+  // Read temperature as Celsius (the default)
+  float t = dht11.readTemperature();
+  // Read temperature as Fahrenheit (isFahrenheit = true)
+  float f = dht11.readTemperature(true);
+
+  // Check if any reads failed and exit early (to try again).
+  if (isnan(h) || isnan(t) || isnan(f)) {
+    Serial.println(F("Failed to read from DHT sensor!"));
+    return;
+  }
+
+  // Compute heat index in Fahrenheit (the default)
+  float hif = dht11.computeHeatIndex(f, h);
+  // Compute heat index in Celsius (isFahreheit = false)
+  float hic = dht11.computeHeatIndex(t, h, false);
+
+  Serial.print(F("Humidity: "));
+  Serial.print(h);
+  Serial.print(F("%  Temperature: "));
+  Serial.print(t);
+  Serial.print(F("°C "));
+  Serial.print(f);
+  Serial.print(F("°F  Heat index: "));
+  Serial.print(hic);
+  Serial.print(F("°C "));
+  Serial.print(hif);
+  Serial.println(F("°F"));
+
+  digitalWrite(LEDGreen, !digitalRead(LEDGreen));
+  if (digitalRead(LEDGreen) == 1) {
+    Serial.print("LED Green : ON  | ");
+  } else {
+    Serial.print("LED Green : OFF | ");
+  }
+  digitalWrite(LEDBlue, !digitalRead(LEDBlue));
+  if (digitalRead(LEDBlue) == 1) {
+    Serial.println("LED Blue : ON");
+  } else {
+    Serial.println("LED Blue : OFF");
+  }
+}
+//========================================================================
+//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Connection Test between NodeMCU and Thinger IO
+// see here: https://www.youtube.com/watch?v=8jMr94B8iN0 to add NodeMCU ESP8266 library and board
+//----------------------------------------Include Library
+#include <ThingerESP8266.h>
+#include <ESP8266WiFi.h>
+//----------------------------------------
+
+//----------------------------------------Thinger IO configuration
+#define USERNAME "your_user_name"
+#define DEVICE_ID "your_device_id"
+#define DEVICE_CREDENTIAL "your_device_credential"
+//----------------------------------------
+
+#define ON_Board_LED 2  //--> Defining an On Board LED, used for indicators when the process of connecting to a wifi router. GPIO2 = D4.
+
+ThingerESP8266 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL); //--> Initialize Thinger IO (ThingerESP8266)
+
+//----------------------------------------SSID and Password of your WiFi Router/Hotspot.
+const char* ssid = "wifi_name"; //--> Your wifi name or SSID.
+const char* password = "wifi_password"; //--> Your wifi password.
+//----------------------------------------
+
+//========================================================================VOID SETUP
+void setup() {
+  // put your setup code here, to run once:
+
+  pinMode(ON_Board_LED,OUTPUT); //--> On Board LED port Direction output
+  digitalWrite(ON_Board_LED, HIGH); //--> Turn off Led On Board
+  
+  WiFi.begin(ssid, password); //--> Connect to your WiFi router
+
+  //----------------------------------------Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+    //----------------------------------------Make the On Board Flashing LED on the process of connecting to the wifi router.
+    digitalWrite(ON_Board_LED, LOW);
+    delay(250);
+    digitalWrite(ON_Board_LED, HIGH);
+    delay(250);
+    //----------------------------------------
+  }
+  //----------------------------------------
+  
+  digitalWrite(ON_Board_LED, HIGH); //--> Turn off the On Board LED when it is connected to the wifi router.
+
+  thing.add_wifi(ssid, password); //--> Initialize wifi
+}
+//========================================================================
+
+//========================================================================VOID LOOP
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  // call always the thing handle in the loop and avoid any delay here
+  thing.handle();
+  // here you can call endpoints
+  // and also you can stream resources
+}
+//========================================================================
+//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+
+
+
+
+//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Sending and Receiving Thinger IO
+// see here: https://www.youtube.com/watch?v=8jMr94B8iN0 to add NodeMCU ESP8266 library and board
+//----------------------------------------Include Library
+#include <ThingerESP8266.h>
+#include <ESP8266WiFi.h>
+#include "DHT.h"
+//----------------------------------------
+
+//----------------------------------------Thinger IO configuration
+#define USERNAME "your_user_name"
+#define DEVICE_ID "your_device_id"
+#define DEVICE_CREDENTIAL "your_device_credential"
+//----------------------------------------
+
+#define ON_Board_LED 2  //--> Defining an On Board LED, used for indicators when the process of connecting to a wifi router. GPIO2 = D4.
+
+ThingerESP8266 thing(USERNAME, DEVICE_ID, DEVICE_CREDENTIAL); //--> Initialize Thinger IO (ThingerESP8266)
+
+//----------------------------------------SSID and Password of your WiFi Router/Hotspot.
+const char* ssid = "wifi_name"; //--> Your wifi name or SSID.
+const char* password = "wifi_password"; //--> Your wifi password.
+//----------------------------------------
+
+//----------------------------------------DHT11 Sensor Configuration
+#define DHTPIN D1 //--> Digital pin connected to the DHT sensor. D1 = GPIO5.
+#define DHTTYPE DHT11 //--> DHT11
+
+DHT dht11(DHTPIN, DHTTYPE); //--> DHT11 Sensor Initialization
+//----------------------------------------
+
+float temperature,humidity; //--> Variables for temperature and humidity data
+
+#define LEDGreenPin D5 //--> Green LED pin. D5 = GPIO14.
+#define LEDBluePin D6 //--> Blue LED pin. D6 = GPIO12
+
+void setup() {
+  // put your setup code here, to run once:
+
+  pinMode(ON_Board_LED,OUTPUT); //--> On Board LED port Direction output
+  digitalWrite(ON_Board_LED, HIGH); //--> Turn off Led On Board
+
+  pinMode(LEDGreenPin, OUTPUT);
+  pinMode(LEDBluePin, OUTPUT);
+
+  WiFi.begin(ssid, password); //--> Connect to your WiFi router
+
+  //----------------------------------------Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+    //----------------------------------------Make the On Board Flashing LED on the process of connecting to the wifi router.
+    digitalWrite(ON_Board_LED, LOW);
+    delay(250);
+    digitalWrite(ON_Board_LED, HIGH);
+    delay(250);
+    //----------------------------------------
+  }
+  //----------------------------------------
+  
+  digitalWrite(ON_Board_LED, HIGH); //--> Turn off the On Board LED when it is connected to the wifi router.
+
+  thing.add_wifi(ssid, password); //--> Initialize wifi
+
+  dht11.begin(); //--> Starts reading DHT11 Sensor
+  
+  //----------------------------------------Sends DHT11 Sensor data (Temperature and Humidity) to Thinger IO
+  // Symbol or operator ">>" means to transmit data
+  thing["dht11"] >> [](pson& out){
+      out["temperature"] = temperature;
+      out["humidity"] = humidity;
+  };
+  //----------------------------------------
+
+  //----------------------------------------Receive data from Thinger IO to turn on or off the LED
+  // Symbol or Operator "<<" means to receive data
+  thing["LEDGreen"] << digitalPin(LEDGreenPin);
+  thing["LEDBlue"] << digitalPin(LEDBluePin);
+  //----------------------------------------
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  
+  // call always the thing handle in the loop and avoid any delay here
+  thing.handle();
+  
+  //----------------------------------------To get temperature and humidity data from the DHT11 sensor
+  temperature = dht11.readTemperature();
+  humidity = dht11.readHumidity();
+  //----------------------------------------
+}
+//<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
