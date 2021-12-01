@@ -24,8 +24,8 @@ int countsp = 1;
 #include<TimeLib.h>
 #include<ESP32Time.h>
 
-const char* WIFI_SSID = "";
-const char* WIFI_PASSWORD =  "";
+const char* WIFI_SSID = "Akshad";
+const char* WIFI_PASSWORD =  "internet";
 
 //Provide the token generation process info.
 #include "addons/TokenHelper.h"
@@ -35,7 +35,7 @@ const char* WIFI_PASSWORD =  "";
 #define FIREBASE_HOST "https://uart-esp32-default-rtdb.firebaseio.com/"
 #define API_KEY "AIzaSyCy3pK8YZkivrp49g52Cnu3FY5RfUGVIO0"
 #define USER_EMAIL "akx2404@gmail.com"
-#define USER_PASSWORD ""
+#define USER_PASSWORD "akxakx@giis"
 
 //Define Firebase Data object
 FirebaseData fbdo;
@@ -69,6 +69,9 @@ String printLocalTime()
 void setup() {
   Serial.begin(115200);
   Serial2.begin(115200, SERIAL_8N1, RXp2, TXp2);
+
+  pinMode(41, INPUT); // Setup for leads off detection LO +
+  pinMode(40, INPUT); // Setup for leads off detection LO -
 
   mlx.begin();
   pinMode(ir, INPUT);
@@ -130,6 +133,7 @@ void setup() {
 int bpm_arr[8];
 int spo2_arr[8];
 int body;
+int ecg;
 void loop()
 {
 
@@ -144,7 +148,14 @@ void loop()
     sp_sum = sp_sum + spo2_arr[j];
     delay(20);
   }*/
-    
+    if((digitalRead(40) == 1)||(digitalRead(41) == 1)){
+      Serial.println('!');
+    }
+    else{
+      // send the value of analog input 0:
+        ecg = analogRead(A0);
+    }
+  
     /*const double hr = doc["hr"];
     const double spo2 = doc["spo2"];*/
     double temp_obj = mlx.readObjectTempC();
@@ -187,12 +198,15 @@ void loop()
     Serial.println(temp_obj);
     //Serial.print("temp_amb - ");
     //Serial.println(temp_amb);
+    Serial.print("ecg - ");
+    Serial.println(ecg);
     Serial.println();
 
     FirebaseJson json;
     json.set("bpm", avg_bpm);
     json.set("spo2", avg_sp);
     json.set("body_temp", temp_obj);
+    json.set("ECG", ecg);
     //json.set("ambient_temp", temp_amb);
     json.set("timestamp", printLocalTime());
     newPath = "/readings";
