@@ -1,0 +1,6 @@
+ESP32
+MAX30100 (arduino)
+AD8232
+MLX90614
+Power?
+IR
